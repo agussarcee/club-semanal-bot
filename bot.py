@@ -234,6 +234,35 @@ async def propuestas(ctx):
     await ctx.author.send(mensaje)
 
 @bot.command()
+async def preview(ctx, *numeros):
+
+    await ctx.message.delete()
+
+    if len(numeros) == 0:
+        await ctx.author.send("Tenés que indicar los números de las películas.")
+        return
+
+    seleccionadas = []
+
+    for n in numeros:
+        try:
+            index = int(n) - 1
+        except:
+            continue
+
+        if index < len(lista_propuestas):
+            seleccionadas.append(lista_propuestas[index])
+
+    if len(seleccionadas) == 0:
+        await ctx.author.send("No encontré esas propuestas.")
+        return
+
+    await ctx.author.send("🎬 **Preview de publicación**")
+
+    for peli in seleccionadas:
+        await pelicula(ctx.author, nombre=peli["busqueda"])
+
+@bot.command()
 async def publicar(ctx, *numeros):
 
     await ctx.message.delete()
