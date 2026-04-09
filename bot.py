@@ -152,7 +152,10 @@ async def pelicula(ctx, *, nombre):
 @bot.command()
 async def proponer(ctx, *, nombre):
 
-    await ctx.message.delete()
+    try:
+        await ctx.message.delete()
+    except:
+        pass
 
     url = "https://api.themoviedb.org/3/search/movie"
 
@@ -212,8 +215,8 @@ async def proponer(ctx, *, nombre):
 
     lista_propuestas.append({
         "titulo": titulo_mostrar,
-        "busqueda": nombre
-    })
+        "busqueda": titulo
+     })
 
     await ctx.author.send(f"🎬 **{titulo_mostrar}** fue agregada a la lista de propuestas.")
 
