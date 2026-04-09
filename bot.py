@@ -7,9 +7,12 @@ import os
 TOKEN = os.getenv("TOKEN")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-lista_propuestas = []
+intents = discord.Intents.default()
+intents.message_content = True
 
-bot = commands.Bot(command_prefix="!")
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+lista_propuestas = []
 
 @bot.event
 async def on_ready():
