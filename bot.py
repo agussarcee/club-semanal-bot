@@ -79,19 +79,10 @@ async def pelicula(ctx, *, nombre):
     else:
         plataformas_texto = ", ".join(plataformas)
 
-    busqueda = titulo + " trailer"
+    query = f"{titulo} {fecha} trailer"
+    query = query.replace(" ", "+")
 
-    try:
-        videosSearch = VideosSearch(busqueda, limit=1)
-        resultado = videosSearch.result()
-
-        if len(resultado["result"]) > 0:
-            trailer_url = resultado["result"][0]["link"]
-        else:
-            trailer_url = "Trailer no encontrado"
-
-    except:
-        trailer_url = "Trailer no encontrado"
+    trailer_url = f"https://www.youtube.com/results?search_query={query}"
 
     mensaje = f"""
     
