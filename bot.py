@@ -148,7 +148,6 @@ async def pelicula(ctx, *, nombre):
 )
 
     await ctx.send(embed=embed)
-    embed.set_image(url=poster_url)
 
 @bot.command()
 async def proponer(ctx, *, nombre):
@@ -262,5 +261,8 @@ async def publicar(ctx, *numeros):
 
     for peli in seleccionadas:
         lista_propuestas.remove(peli)
+
+import time
+time.sleep(10)
 
 bot.run(TOKEN)
