@@ -2,10 +2,10 @@ import discord
 from discord.ext import commands
 import requests
 from youtubesearchpython import VideosSearch
+import os
 
-TOKEN = "MTQ5MTQ0NzI3NDgwOTU5Mzk0OQ.G20WiW.3_0xtcc20aRYqJ8iT3h5igz9DeP6Q7T2pMBwXY"
-
-TMDB_API_KEY = "19f8adc7e37e0de316d3d1c90e156c3e"
+TOKEN = os.getenv("TOKEN")
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 lista_propuestas = []
 
