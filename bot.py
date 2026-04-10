@@ -3,6 +3,7 @@ from discord.ext import commands
 import requests
 from youtubesearchpython import VideosSearch
 import os
+import json
 
 TOKEN = os.getenv("TOKEN")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
@@ -12,7 +13,20 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-lista_propuestas = []
+ARCHIVO_PROPUESTAS = "propuestas.json"
+
+def cargar_propuestas():
+    try:
+        with open(ARCHIVO_PROPUESTAS, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
+
+def guardar_propuestas():
+    with open(ARCHIVO_PROPUESTAS, "w", encoding="utf-8") as f:
+        json.dump(lista_propuestas, f, ensure_ascii=False, indent=2)
+
+lista_propuestas = cargar_propuestas()
 
 @bot.event
 async def on_ready():
@@ -217,6 +231,8 @@ async def proponer(ctx, *, nombre):
         "titulo": titulo_mostrar,
         "busqueda": titulo
      })
+    
+    guardar_propuestas()
 
     await ctx.author.send(f"🎬 **{titulo_mostrar}** fue agregada a la lista de propuestas.")
 
@@ -293,6 +309,8 @@ async def publicar(ctx, *numeros):
 
     for peli in seleccionadas:
         lista_propuestas.remove(peli)
+
+    guardar_propuestas()
 
 import time
 time.sleep(10)
