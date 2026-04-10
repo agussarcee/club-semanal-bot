@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from discord.ui import Select, View
 import requests
 from youtubesearchpython import VideosSearch
 import os
@@ -61,6 +62,69 @@ def cargar_propuestas():
 def guardar_propuestas():
     with open(ARCHIVO_PROPUESTAS, "w", encoding="utf-8") as f:
         json.dump(lista_propuestas, f, ensure_ascii=False, indent=2)
+
+class PublicarSelect(discord.ui.Select):
+
+    def __init__(self):
+
+        options = []
+
+        for i, peli in enumerate(lista_propuestas):
+            options.append(
+                discord.SelectOption(
+                    label=peli["titulo"],
+                    value=str(i)
+                )
+            )
+
+        super().__init__(
+            placeholder="Elegí las películas para publicar",
+            min_values=1,
+            max_values=min(5, len(options)),
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+
+        seleccionadas = []
+
+        for index in self.values:
+            seleccionadas.append(lista_propuestas[int(index)])
+
+        titulos_encuesta = []
+
+        await interaction.channel.send("🍿 **Películas de esta semana**")
+
+        for peli in seleccionadas:
+            titulos_encuesta.append(peli["titulo"])
+            await pelicula(interaction.channel, nombre=peli["busqueda"])
+
+        poll = discord.Poll(
+            question="¿Cuál vemos esta semana?",
+            duration=24
+        )
+
+        for titulo in titulos_encuesta:
+            poll.add_answer(text=titulo)
+
+        await interaction.channel.send(poll=poll)
+
+        for peli in seleccionadas:
+            lista_propuestas.remove(peli)
+
+        guardar_propuestas()
+
+        await interaction.response.send_message(
+            "Películas publicadas ✅",
+            ephemeral=True
+        )
+
+
+class PublicarView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__()
+        self.add_item(PublicarSelect())
 
 lista_propuestas = cargar_propuestas()
 
@@ -246,6 +310,69 @@ async def proponer(interaction: discord.Interaction, nombre: str):
         f"🎬 **{titulo_mostrar}** fue agregada a las propuestas.",
         ephemeral=True
     )
+
+class PublicarSelect(discord.ui.Select):
+
+    def __init__(self):
+
+        options = []
+
+        for i, peli in enumerate(lista_propuestas):
+            options.append(
+                discord.SelectOption(
+                    label=peli["titulo"],
+                    value=str(i)
+                )
+            )
+
+        super().__init__(
+            placeholder="Elegí las películas para publicar",
+            min_values=1,
+            max_values=min(5, len(options)),
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+
+        seleccionadas = []
+
+        for index in self.values:
+            seleccionadas.append(lista_propuestas[int(index)])
+
+        titulos_encuesta = []
+
+        await interaction.channel.send("🍿 **Películas de esta semana**")
+
+        for peli in seleccionadas:
+            titulos_encuesta.append(peli["titulo"])
+            await pelicula(interaction.channel, nombre=peli["busqueda"])
+
+        poll = discord.Poll(
+            question="¿Cuál vemos esta semana?",
+            duration=24
+        )
+
+        for titulo in titulos_encuesta:
+            poll.add_answer(text=titulo)
+
+        await interaction.channel.send(poll=poll)
+
+        for peli in seleccionadas:
+            lista_propuestas.remove(peli)
+
+        guardar_propuestas()
+
+        await interaction.response.send_message(
+            "Películas publicadas ✅",
+            ephemeral=True
+        )
+
+
+class PublicarView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__()
+        self.add_item(PublicarSelect())
 
 @bot.command()
 async def propuestas(ctx):
