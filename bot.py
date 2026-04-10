@@ -1,9 +1,43 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import requests
 from youtubesearchpython import VideosSearch
 import os
 import json
+
+async def autocomplete_peliculas(
+    interaction: discord.Interaction,
+    current: str
+):
+    if not current:
+        return []
+
+    url = "https://api.themoviedb.org/3/search/movie"
+
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": current,
+        "language": "es-ES"
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    choices = []
+
+    for movie in data["results"][:8]:
+        titulo = movie["title"]
+        anio = movie["release_date"][:4] if movie["release_date"] else "?"
+
+        choices.append(
+            app_commands.Choice(
+                name=f"{titulo} ({anio})",
+                value=titulo
+            )
+        )
+
+    return choices
 
 TOKEN = os.getenv("TOKEN")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
@@ -12,6 +46,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+tree = bot.tree
 
 ARCHIVO_PROPUESTAS = "propuestas.json"
 
@@ -30,6 +65,7 @@ lista_propuestas = cargar_propuestas()
 
 @bot.event
 async def on_ready():
+    await tree.sync()
     print("Club Semanal conectado como " + str(bot.user))
 
 @bot.command()
@@ -163,13 +199,10 @@ async def pelicula(ctx, *, nombre):
 
     await ctx.send(embed=embed)
 
-@bot.command()
-async def proponer(ctx, *, nombre):
+@tree.command(name="proponer", description="Proponer una película")
+@app_commands.autocomplete(nombre=autocomplete_peliculas)
 
-    try:
-        await ctx.message.delete()
-    except:
-        pass
+async def proponer(interaction: discord.Interaction, nombre: str):
 
     url = "https://api.themoviedb.org/3/search/movie"
 
@@ -183,36 +216,10 @@ async def proponer(ctx, *, nombre):
     data = response.json()
 
     if len(data["results"]) == 0:
-        await ctx.author.send("No encontré esa película 😢")
+        await interaction.response.send_message("No encontré esa película 😢", ephemeral=True)
         return
 
-    resultados = data["results"][:8]
-
-    mensaje = "🎬 Encontré varias películas parecidas con ese nombre:\n\n"
-
-    for i, movie in enumerate(resultados, start=1):
-
-        titulo = movie["title"]
-        anio = movie["release_date"][:4] if movie["release_date"] else "?"
-
-        mensaje += f"{i}. {titulo} ({anio})\n"
-
-    mensaje += "\nRespondé con el número de la película."
-
-    await ctx.author.send(mensaje)
-
-    def check(m):
-        return m.author == ctx.author and m.channel == ctx.author.dm_channel
-
-    respuesta = await bot.wait_for("message", check=check)
-
-    try:
-        index = int(respuesta.content) - 1
-    except:
-        await ctx.author.send("Tenés que responder con un número.")
-        return
-
-    movie = resultados[index]
+    movie = data["results"][0]
 
     titulo = movie["title"]
     titulo_original = movie["original_title"]
@@ -224,17 +231,20 @@ async def proponer(ctx, *, nombre):
 
     for peli in lista_propuestas:
         if peli["titulo"].lower() == titulo_mostrar.lower():
-            await ctx.author.send("⚠ Esa película ya fue propuesta.")
+            await interaction.response.send_message("⚠ Esa película ya fue propuesta.", ephemeral=True)
             return
 
     lista_propuestas.append({
         "titulo": titulo_mostrar,
-        "busqueda": titulo
-     })
-    
+        "busqueda": nombre
+    })
+
     guardar_propuestas()
 
-    await ctx.author.send(f"🎬 **{titulo_mostrar}** fue agregada a la lista de propuestas.")
+    await interaction.response.send_message(
+        f"🎬 **{titulo_mostrar}** fue agregada a las propuestas.",
+        ephemeral=True
+    )
 
 @bot.command()
 async def propuestas(ctx):
@@ -302,7 +312,9 @@ async def publicar(ctx, *numeros):
         await ctx.send("No encontré esas propuestas.")
         return
 
-    await ctx.send("🍿 **Películas de esta semana**")
+    await ctx.send("🍿 **Posibles películas de esta semana**")
+
+    titulos_encuesta = [p["titulo"] for p in seleccionadas]
 
     for peli in seleccionadas:
         await pelicula(ctx, nombre=peli["busqueda"])
@@ -311,6 +323,16 @@ async def publicar(ctx, *numeros):
         lista_propuestas.remove(peli)
 
     guardar_propuestas()
+
+    poll = discord.Poll(
+    question="¿Cuál vemos esta semana?",
+    duration=24
+)
+
+for titulo in titulos_encuesta:
+    poll.add_answer(text=titulo)
+
+await ctx.send(poll=poll)
 
 import time
 time.sleep(10)
