@@ -5,6 +5,7 @@ import requests
 from youtubesearchpython import VideosSearch
 import os
 import json
+import time
 
 async def autocomplete_peliculas(
     interaction: discord.Interaction,
@@ -327,14 +328,14 @@ async def publicar(ctx, *numeros):
     poll = discord.Poll(
     question="¿Cuál vemos esta semana?",
     duration=24
-)
+    )
 
-for titulo in titulos_encuesta:
-    poll.add_answer(text=titulo)
+    for titulo in titulos_encuesta:
+        poll.add_answer(text=titulo)
 
-await ctx.send(poll=poll)
+    await ctx.send(poll=poll)
 
-import time
-time.sleep(10)
+
+time.sleep(5)
 
 bot.run(TOKEN)
