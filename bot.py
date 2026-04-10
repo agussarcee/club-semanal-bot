@@ -311,6 +311,24 @@ async def proponer(interaction: discord.Interaction, nombre: str):
         ephemeral=True
     )
 
+@tree.command(name="publicar", description="Publicar encuesta con películas propuestas")
+async def publicar_slash(interaction: discord.Interaction):
+
+    if len(lista_propuestas) == 0:
+        await interaction.response.send_message(
+            "No hay propuestas para publicar.",
+            ephemeral=True
+        )
+        return
+
+    view = PublicarView()
+
+    await interaction.response.send_message(
+        "Elegí las películas para la encuesta:",
+        view=view,
+        ephemeral=True
+    )
+
 class PublicarSelect(discord.ui.Select):
 
     def __init__(self):
