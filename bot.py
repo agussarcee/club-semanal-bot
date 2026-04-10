@@ -5,6 +5,7 @@ import requests
 import os
 import json
 import time
+from datetime import timedelta
 
 TOKEN = os.getenv("TOKEN")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
@@ -246,7 +247,7 @@ class PublicarSelect(discord.ui.Select):
 
         poll = discord.Poll(
             question="¿Cuál vemos esta semana?",
-            duration=24
+            duration=timedelta(hours=24)
         )
 
         for titulo in titulos_encuesta:
