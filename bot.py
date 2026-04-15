@@ -6,9 +6,11 @@ import os
 import json
 import time
 from datetime import timedelta
+import redis as redislib
 
 TOKEN = os.getenv("TOKEN")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+REDIS_URL = os.getenv("REDIS_URL")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -17,9 +19,20 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
 ARCHIVO_PROPUESTAS = "propuestas.json"
+REDIS_KEY = "propuestas"
+
+redis_client = redislib.from_url(REDIS_URL) if REDIS_URL else None
 
 
 def cargar_propuestas():
+    if redis_client:
+        try:
+            data = redis_client.get(REDIS_KEY)
+            if data:
+                return json.loads(data)
+            return []
+        except Exception as e:
+            print(f"Error cargando desde Redis: {e}")
     try:
         with open(ARCHIVO_PROPUESTAS, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -28,6 +41,12 @@ def cargar_propuestas():
 
 
 def guardar_propuestas():
+    if redis_client:
+        try:
+            redis_client.set(REDIS_KEY, json.dumps(lista_propuestas, ensure_ascii=False))
+            return
+        except Exception as e:
+            print(f"Error guardando en Redis: {e}")
     with open(ARCHIVO_PROPUESTAS, "w", encoding="utf-8") as f:
         json.dump(lista_propuestas, f, ensure_ascii=False, indent=2)
 
@@ -414,3 +433,4 @@ async def preview(ctx, *numeros):
 time.sleep(5)
 
 bot.run(TOKEN)
+
