@@ -194,9 +194,23 @@ async def proponer(interaction: discord.Interaction, nombre: str):
             await interaction.response.send_message("⚠ Esa película ya fue propuesta.", ephemeral=True)
             return
 
+    movie_id = movie["id"]
+    proveedores_url = f"https://api.themoviedb.org/3/movie/{movie_id}/watch/providers"
+    response_proveedores = requests.get(proveedores_url, params={"api_key": TMDB_API_KEY})
+    data_proveedores = response_proveedores.json()
+
+    plataformas = []
+    if "AR" in data_proveedores.get("results", {}):
+        if "flatrate" in data_proveedores["results"]["AR"]:
+            for p in data_proveedores["results"]["AR"]["flatrate"]:
+                plataformas.append(p["provider_name"])
+
+    plataformas_texto = ", ".join(plataformas) if plataformas else "No disponible en streaming"
+
     lista_propuestas.append({
         "titulo": titulo_mostrar,
-        "busqueda": nombre
+        "busqueda": nombre,
+        "plataformas": plataformas_texto
     })
 
     guardar_propuestas()
@@ -270,6 +284,69 @@ class PublicarView(discord.ui.View):
         self.add_item(PublicarSelect())
 
 
+class EliminarSelect(discord.ui.Select):
+
+    def __init__(self):
+
+        options = []
+
+        for i, peli in enumerate(lista_propuestas[:25]):
+            options.append(
+                discord.SelectOption(
+                    label=peli["titulo"][:100],
+                    value=str(i)
+                )
+            )
+
+        super().__init__(
+            placeholder="Elegí las películas a eliminar",
+            min_values=1,
+            max_values=len(options),
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+
+        indices = sorted([int(v) for v in self.values], reverse=True)
+
+        eliminadas = []
+
+        for index in indices:
+            eliminadas.append(lista_propuestas[index]["titulo"])
+            lista_propuestas.pop(index)
+
+        guardar_propuestas()
+
+        titulos = "\n".join(f"- {t}" for t in eliminadas)
+        await interaction.response.send_message(
+            f"🗑 Propuestas eliminadas:\n{titulos}",
+            ephemeral=True
+        )
+
+
+class EliminarView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__()
+        self.add_item(EliminarSelect())
+
+
+@tree.command(name="eliminar", description="Eliminar propuestas sin publicar")
+async def eliminar_slash(interaction: discord.Interaction):
+
+    if len(lista_propuestas) == 0:
+        await interaction.response.send_message("No hay propuestas para eliminar.", ephemeral=True)
+        return
+
+    view = EliminarView()
+
+    await interaction.response.send_message(
+        "Elegí las propuestas a eliminar:",
+        view=view,
+        ephemeral=True
+    )
+
+
 @tree.command(name="publicar", description="Publicar encuesta con películas propuestas")
 async def publicar_slash(interaction: discord.Interaction):
 
@@ -298,7 +375,8 @@ async def propuestas(ctx):
     mensaje = "🍿 **Películas propuestas**\n\n"
 
     for i, peli in enumerate(lista_propuestas, start=1):
-        mensaje += f"{i}. {peli['titulo']}\n"
+        plataforma = peli.get("plataformas", "desconocida")
+        mensaje += f"{i}. {peli['titulo']} — {plataforma}\n"
 
     await ctx.author.send(mensaje)
 
