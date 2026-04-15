@@ -251,7 +251,7 @@ class PublicarSelect(discord.ui.Select):
         for i, peli in enumerate(propuestas_mostradas):
             options.append(
                 discord.SelectOption(
-                    label=peli["titulo"],
+                    label=peli["titulo"][:100],
                     value=str(i)
                 )
             )
@@ -391,13 +391,22 @@ async def propuestas(ctx):
         await ctx.author.send("No hay propuestas todavía.")
         return
 
-    mensaje = "🍿 **Películas propuestas**\n\n"
+    encabezado = "🍿 **Películas propuestas**\n\n"
+    lineas = []
 
     for i, peli in enumerate(lista_propuestas, start=1):
         plataforma = peli.get("plataformas", "desconocida")
-        mensaje += f"{i}. {peli['titulo']} — {plataforma}\n"
+        lineas.append(f"{i}. {peli['titulo']} — {plataforma}")
 
-    await ctx.author.send(mensaje)
+    mensaje = encabezado
+    for linea in lineas:
+        if len(mensaje) + len(linea) + 1 > 1900:
+            await ctx.author.send(mensaje)
+            mensaje = ""
+        mensaje += linea + "\n"
+
+    if mensaje:
+        await ctx.author.send(mensaje)
 
 
 @bot.command()
