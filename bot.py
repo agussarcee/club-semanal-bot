@@ -433,4 +433,3 @@ async def preview(ctx, *numeros):
 time.sleep(5)
 
 bot.run(TOKEN)
-
