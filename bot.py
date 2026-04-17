@@ -265,6 +265,8 @@ class PublicarSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
 
+        await interaction.response.defer(ephemeral=True)
+
         seleccionadas = []
 
         for index in self.values:
@@ -278,6 +280,11 @@ class PublicarSelect(discord.ui.Select):
             titulos_encuesta.append(peli["titulo"])
             await enviar_pelicula(interaction.channel, peli["busqueda"])
 
+        for peli in seleccionadas:
+            lista_propuestas.remove(peli)
+
+        guardar_propuestas()
+
         poll = discord.Poll(
             question="¿Cuál vemos esta semana?",
             duration=timedelta(hours=24)
@@ -288,12 +295,7 @@ class PublicarSelect(discord.ui.Select):
 
         await interaction.channel.send(poll=poll)
 
-        for peli in seleccionadas:
-            lista_propuestas.remove(peli)
-
-        guardar_propuestas()
-
-        await interaction.response.send_message("Películas publicadas ✅", ephemeral=True)
+        await interaction.followup.send("Películas publicadas ✅", ephemeral=True)
 
 
 class PublicarView(discord.ui.View):
