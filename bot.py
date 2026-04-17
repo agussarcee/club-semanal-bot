@@ -285,19 +285,18 @@ class PublicarSelect(discord.ui.Select):
 
         guardar_propuestas()
 
-                try:
+        try:
             poll = discord.Poll(
                 question="¿Cuál vemos esta semana?",
                 duration=timedelta(hours=24)
             )
             for titulo in titulos_encuesta:
-                poll.add_answer(text=titulo)
+                poll.add_answer(text=titulo[:55])
             await interaction.channel.send(poll=poll)
             await interaction.followup.send("Películas publicadas ✅", ephemeral=True)
         except Exception as e:
             print(f"Error enviando encuesta: {e}")
             await interaction.followup.send(f"⚠ Películas publicadas pero no se pudo crear la encuesta: {e}", ephemeral=True)
-
 
 
 class PublicarView(discord.ui.View):
